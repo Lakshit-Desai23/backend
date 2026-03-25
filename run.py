@@ -4,7 +4,7 @@ import sys
 
 
 deps_path = Path(__file__).resolve().parent / ".deps"
-if deps_path.exists():
+if deps_path.exists() and not os.getenv("RENDER"):
     sys.path.insert(0, str(deps_path))
 
 import uvicorn
