@@ -5,6 +5,7 @@ from app.models.family_member import FamilyMember
 from app.models.group import Group
 from app.models.group_member import GroupMember
 from app.models.limit import Limit
+from app.models.password_reset_token import PasswordResetToken
 from app.models.settlement_payment import SettlementPayment
 from app.models.transaction import Transaction
 from app.models.user import User
@@ -17,6 +18,7 @@ __all__ = [
     "Wallet",
     "Transaction",
     "Limit",
+    "PasswordResetToken",
     "Group",
     "GroupMember",
     "Expense",

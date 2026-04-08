@@ -15,4 +15,9 @@ class Wallet(Base):
     balance: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=0, nullable=False)
 
     family = relationship("Family", back_populates="wallets")
-    transactions = relationship("Transaction", back_populates="wallet", cascade="all, delete-orphan")
+    transactions = relationship(
+        "Transaction",
+        foreign_keys="Transaction.wallet_id",
+        back_populates="wallet",
+        cascade="all, delete-orphan",
+    )

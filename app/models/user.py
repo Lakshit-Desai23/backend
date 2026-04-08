@@ -9,6 +9,7 @@ class User(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     name: Mapped[str] = mapped_column(String(120), nullable=False)
+    email: Mapped[str | None] = mapped_column(String(255), unique=True, index=True, nullable=True)
     mobile: Mapped[str] = mapped_column(String(20), unique=True, index=True, nullable=False)
     password: Mapped[str] = mapped_column(String(255), nullable=False)
 
@@ -22,3 +23,8 @@ class User(Base):
     received_settlements = relationship("SettlementPayment", foreign_keys="SettlementPayment.to_user_id")
     transactions = relationship("Transaction", back_populates="user")
     limit = relationship("Limit", back_populates="user", uselist=False, cascade="all, delete-orphan")
+    password_reset_tokens = relationship(
+        "PasswordResetToken",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )

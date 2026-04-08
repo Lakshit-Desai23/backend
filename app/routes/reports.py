@@ -14,11 +14,17 @@ def _serialize_transaction(transaction):
     return {
         "id": transaction.id,
         "wallet_id": transaction.wallet_id,
+        "destination_wallet_id": transaction.destination_wallet_id,
         "user_id": transaction.user_id,
         "amount": transaction.amount,
         "type": transaction.type,
+        "note": transaction.note,
         "created_at": transaction.created_at,
         "user_name": transaction.user.name if transaction.user else "",
+        "wallet_name": transaction.wallet.name if transaction.wallet else "",
+        "destination_wallet_name": (
+            transaction.destination_wallet.name if transaction.destination_wallet else None
+        ),
     }
 
 

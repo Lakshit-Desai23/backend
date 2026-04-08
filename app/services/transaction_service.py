@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from decimal import Decimal
 
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from sqlalchemy.orm import Session, joinedload
 
 from app.models.family_member import FamilyMember
@@ -15,18 +15,55 @@ class TransactionService:
     def __init__(self, db: Session):
         self.db = db
 
-    def add_transaction(self, wallet_id: int, amount: Decimal, txn_type: str, user: User) -> Transaction:
+    def add_transaction(
+        self,
+        wallet_id: int,
+        amount: Decimal,
+        txn_type: str,
+        user: User,
+        destination_wallet_id: int | None = None,
+        note: str | None = None,
+    ) -> Transaction:
         wallet = self._get_wallet_with_access(wallet_id, user.id)
+        cleaned_note = note.strip() if note else None
 
-        if txn_type == "debit":
-            self._validate_limits(user.id, amount)
+        if txn_type == "transfer":
+            if not destination_wallet_id:
+                raise ValueError("Destination wallet is required for transfers")
+            if destination_wallet_id == wallet_id:
+                raise ValueError("Choose a different destination wallet")
+
+            destination_wallet = self._get_wallet_with_access(destination_wallet_id, user.id)
             if wallet.balance < amount:
                 raise ValueError("Insufficient wallet balance")
-            wallet.balance -= amount
-        else:
-            wallet.balance += amount
 
-        transaction = Transaction(wallet_id=wallet.id, user_id=user.id, amount=amount, type=txn_type)
+            wallet.balance -= amount
+            destination_wallet.balance += amount
+            transaction = Transaction(
+                wallet_id=wallet.id,
+                destination_wallet_id=destination_wallet.id,
+                user_id=user.id,
+                amount=amount,
+                type=txn_type,
+                note=cleaned_note,
+            )
+        else:
+            if txn_type == "debit":
+                self._validate_limits(user.id, amount)
+                if wallet.balance < amount:
+                    raise ValueError("Insufficient wallet balance")
+                wallet.balance -= amount
+            else:
+                wallet.balance += amount
+
+            transaction = Transaction(
+                wallet_id=wallet.id,
+                user_id=user.id,
+                amount=amount,
+                type=txn_type,
+                note=cleaned_note,
+            )
+
         self.db.add(transaction)
         self.db.commit()
         self.db.refresh(transaction)
@@ -36,8 +73,17 @@ class TransactionService:
         self._get_wallet_with_access(wallet_id, user.id)
         return (
             self.db.query(Transaction)
-            .options(joinedload(Transaction.user))
-            .filter(Transaction.wallet_id == wallet_id)
+            .options(
+                joinedload(Transaction.user),
+                joinedload(Transaction.wallet),
+                joinedload(Transaction.destination_wallet),
+            )
+            .filter(
+                or_(
+                    Transaction.wallet_id == wallet_id,
+                    Transaction.destination_wallet_id == wallet_id,
+                )
+            )
             .order_by(Transaction.created_at.desc())
             .all()
         )

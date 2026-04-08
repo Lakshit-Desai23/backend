@@ -262,4 +262,4 @@ class GroupService:
             raise PermissionError("You do not have access to this group")
 
     def _q(self, value: Decimal | float | int) -> Decimal:
-        return Decimal(value).quantize(TWOPLACES, rounding=ROUND_HALF_UP)
+        return Decimal(str(value)).quantize(TWOPLACES, rounding=ROUND_HALF_UP)

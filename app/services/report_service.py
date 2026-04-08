@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from sqlalchemy import func
+from sqlalchemy import distinct, func
 from sqlalchemy.orm import Session, joinedload
 
 from app.models.family_member import FamilyMember
@@ -34,7 +34,11 @@ class ReportService:
         transactions = (
             self.db.query(Transaction)
             .join(Wallet, Wallet.id == Transaction.wallet_id)
-            .options(joinedload(Transaction.user))
+            .options(
+                joinedload(Transaction.user),
+                joinedload(Transaction.wallet),
+                joinedload(Transaction.destination_wallet),
+            )
             .filter(Wallet.family_id.in_(family_ids))
             .order_by(Transaction.created_at.desc())
             .limit(10)
@@ -58,15 +62,15 @@ class ReportService:
                 expense = Decimal(total)
 
         members_count = (
-            self.db.query(FamilyMember)
+            self.db.query(func.count(distinct(FamilyMember.user_id)))
             .filter(FamilyMember.family_id.in_(family_ids))
-            .count()
+            .scalar()
         )
 
         return {
             "total_balance": total_balance,
             "wallets_count": len(wallets),
-            "members_count": members_count,
+            "members_count": members_count or 0,
             "total_income": income,
             "total_expense": expense,
             "recent_transactions": transactions,

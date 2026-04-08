@@ -14,11 +14,17 @@ def _serialize_transaction(transaction):
     return {
         "id": transaction.id,
         "wallet_id": transaction.wallet_id,
+        "destination_wallet_id": transaction.destination_wallet_id,
         "user_id": transaction.user_id,
         "amount": transaction.amount,
         "type": transaction.type,
+        "note": transaction.note,
         "created_at": transaction.created_at,
         "user_name": transaction.user.name if transaction.user else "",
+        "wallet_name": transaction.wallet.name if transaction.wallet else "",
+        "destination_wallet_name": (
+            transaction.destination_wallet.name if transaction.destination_wallet else None
+        ),
     }
 
 
@@ -30,7 +36,14 @@ def create_transaction(
 ):
     service = TransactionService(db)
     try:
-        transaction = service.add_transaction(payload.wallet_id, payload.amount, payload.type, current_user)
+        transaction = service.add_transaction(
+            payload.wallet_id,
+            payload.amount,
+            payload.type,
+            current_user,
+            payload.destination_wallet_id,
+            payload.note,
+        )
         transaction.user = current_user
         return _serialize_transaction(transaction)
     except ValueError as exc:
